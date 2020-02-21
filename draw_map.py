@@ -3,6 +3,7 @@
 from tkinter import *
 import numpy as np
 
+# todo: matrix saving does not save the last cell clicked, and does not reset cells that are erased
 class Cell():
     FILLED_COLOR_BG = "green"
     EMPTY_COLOR_BG = "white"
