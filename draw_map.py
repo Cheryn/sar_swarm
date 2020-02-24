@@ -55,7 +55,7 @@ class CellGrid(Canvas):
         #memorize the cells that have been modified to avoid many switching of state during mouse motion.
         self.switched = []
 
-        self.matrix = np.zeros((rowNumber,columnNumber))
+        self.matrix = np.matrix(np.zeros((rowNumber, columnNumber)))
 
         #bind click action
         self.bind("<Button-1>", self.handleMouseClick)
@@ -75,10 +75,12 @@ class CellGrid(Canvas):
     def _eventCoords(self, event):
         row = int(event.y / self.cellSize)
         column = int(event.x / self.cellSize)
-        with open("map1.txt", "w") as file:
+        with open("map3.txt", "w") as file:
             for line in self.matrix:
-                file.write(str(line) + " ")
+                np.savetxt(file, line, fmt='%.0f')
                 file.write("\n")
+                # file.write(str(line) + " ")
+                # file.write("\n")
         return row, column
 
     def handleMouseClick(self, event):
@@ -88,12 +90,12 @@ class CellGrid(Canvas):
         cell.draw()
         #add the cell to the list of cell switched during the click
         self.switched.append(cell)
-        self.matrix[row][column] = 1
+        self.matrix[row, column] = 1
 
     def handleMouseMotion(self, event):
         row, column = self._eventCoords(event)
         cell = self.grid[row][column]
-        self.matrix[row][column] = 1
+        self.matrix[row, column] = 1
 
         if cell not in self.switched:
             cell._switch()
@@ -104,7 +106,7 @@ class CellGrid(Canvas):
 if __name__ == "__main__" :
     app = Tk()
 
-    grid = CellGrid(app, 10, 10, 50)
+    grid = CellGrid(app, 20, 20, 20)
     grid.pack()
 
     app.mainloop()
