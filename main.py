@@ -1,11 +1,15 @@
 # PSO adapted from: https://medium.com/analytics-vidhya/implementing-particle-swarm-optimization-pso-algorithm-in-python-9efc2eb179a6
 #
+import os
 import numpy as np
-import matplotlib.pyplot as plt
 import copy
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from matplotlib.animation import FuncAnimation
+from celluloid import Camera
 
 dim = 2
-gridsize = 100
+gridsize = 20
 
 
 class Robot:
@@ -17,29 +21,60 @@ class Robot:
         self.pbest_position = copy.deepcopy(self.position)
         self.pbest_value = float('inf')
 
-    # todo: wall restriction
+        self.path = [[i] for i in self.position]
+
     # todo: obstacle avoidance
     def move(self):
-        self.position += self.velocity
-        # if (self.position + self.velocity > 100 * np.ones(self.position.size)).any() or (self.position > -100 * np.ones(self.position.size)).any():
-        #     self.position -= 2*self.velocity
+        next_position = self.position + self.velocity
+        # wall restriction
+        if (next_position < gridsize * np.ones(dim)).all() and (next_position > np.zeros(dim)).all():
+            self.position = next_position
+        [self.path[i].append(self.position[i]) for i in range(len(self.path))]
 
 # todo: obstacle map search space
 class Space:
-    def __init__(self, target, target_error, n_robots):
-        self.target = target
+    def __init__(self, target_error, n_robots):
+        # load map
+        self.map = self._load_map()
+
+        self.target = self.generate_target()
         self.target_error = target_error
         self.n_robots = n_robots
         self.robots = []
+        self.fig = plt.figure()
+        # self.ax = plt.axes(xlim=(0, gridsize), ylim=(0, gridsize))
+        self.camera = Camera(self.fig)
+        # self.line, = ax.plot([], [], lw=3)
 
         # global best
         self.gbest_position = np.random.uniform(0, gridsize, dim)
         self.gbest_value = float('inf')
 
+    def _load_map(self):
+        map_filename = None
+        txt_files = list(np.sort([file for file in os.listdir(os.getcwd()) if file.endswith(".txt")]))
+        if len(txt_files) > 0:
+            for txt_file in txt_files:
+                map_filename = os.path.join(os.getcwd(), txt_file)
+
+            if map_filename is None:
+                print("no map found")
+                return None
+            else:
+                with open(map_filename, "r") as file:
+                    map_data = file.readlines()
+                return np.loadtxt(map_data)
+
+    def generate_target(self):
+        while True:
+            target = np.random.randint(self.map.shape[0], size=dim)
+            if self.map[target[0],target[1]] == 0:
+                break
+        return target
+
     # todo: generate fitness based on distance
     def fitness(self, robot):
         return np.sum((self.target - robot.position)**2)**0.5
-        # return robot.position[0] ** 2 + robot.position[1] ** 2 + 1
 
     def set_pbest(self):
         for robot in self.robots:
@@ -58,17 +93,21 @@ class Space:
     # todo: gridwise movements
     def move_robots(self, w, c1, c2):
         for robot in self.robots:
-            robot.velocity = w * robot.velocity + \
+            robot.velocity = w * (robot.velocity + \
                            c1 * np.random.uniform(0, 1) * (robot.pbest_position - robot.position) + \
-                           c2 * np.random.uniform(0, 1) * (self.gbest_position - robot.position)
+                           c2 * np.random.uniform(0, 1) * (self.gbest_position - robot.position))
             robot.move()
 
     def visualise(self):
-        plt.ion()
-        plt.figure()
-        plt.scatter(self.target[0], self.target[1], marker="o")
+        # plt.ion()
+        x = [self.target[0]]
+        y = [self.target[1]]
+        # self.fig = plt.scatter(self.target[0], self.target[1], marker='o')
         for robot in self.robots:
-            plt.scatter(robot.position[0], robot.position[1], marker="x")
+            x.append(robot.position[0])
+            y.append(robot.position[1])
+            # self.fig = plt.scatter(robot.position[0], robot.position[1], marker="x")
+        plt.scatter(x, y)
         plt.xlim(0, gridsize)
         plt.ylim(0, gridsize)
         plt.show()
@@ -83,12 +122,13 @@ def main():
     target_error = 0.1
     n_robots = 20
 
-    target = np.random.uniform(0, gridsize, dim)
-    print("target location: ", target)
-
-    search_space = Space(target, target_error, n_robots)
+    search_space = Space(target_error, n_robots)
     robots_vector = [Robot() for _ in range(search_space.n_robots)]
     search_space.robots = robots_vector
+    print("target location: ", search_space.target)
+
+    fig = plt.figure()
+    camera = Camera(fig)
 
     iteration = 0
     while iteration < n_iterations:
@@ -96,18 +136,32 @@ def main():
         search_space.set_gbest()
 
         print("Iter: ", iteration, "Best pos: ", search_space.gbest_position, "Best val: ", search_space.gbest_value)
-        search_space.visualise()
+
+        # search_space.visualise()
+        # search_space.camera.snap()
+        # anim = search_space.camera.animate()
+        # x = [target[0]]
+        # y = [target[1]]
+        fig = plt.scatter(search_space.target[0], search_space.target[1], marker='o')
+        for robot in search_space.robots:
+            # x.append(robot.position[0])
+            # y.append(robot.position[1])
+            fig = plt.scatter(robot.position[0], robot.position[1], marker="x")
+
+        plt.xlim(0, gridsize)
+        plt.ylim(0, gridsize)
+        plt.show()
+        camera.snap()
 
         if search_space.gbest_value < search_space.target_error:
-            print(search_space.gbest_value)
-            print(search_space.gbest_position)
             break
 
-        search_space.move_robots(w=0.7, c1=2, c2=2)
+        search_space.move_robots(w=0.7298, c1=3, c2=2)
         iteration += 1
 
     print("best solution is: ", search_space.gbest_position, "in n_iterations: ", iteration)
-
+    anim = camera.animate()
+    anim.save('test.mp4')
 
 if __name__ == '__main__':
     main()
