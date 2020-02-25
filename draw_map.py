@@ -106,7 +106,7 @@ class CellGrid(Canvas):
 if __name__ == "__main__" :
     app = Tk()
 
-    grid = CellGrid(app, 20, 20, 20)
+    grid = CellGrid(app, 100, 100, 5)
     grid.pack()
 
     app.mainloop()
