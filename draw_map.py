@@ -17,6 +17,7 @@ class Cell():
         self.ord = y
         self.size = size
         self.fill = False
+        self.value = 0
 
     def _switch(self):
         """ Switch if the cell is filled or not. """
@@ -27,10 +28,12 @@ class Cell():
         if self.master is not None :
             fill = Cell.FILLED_COLOR_BG
             outline = Cell.FILLED_COLOR_BORDER
+            self.value = 1
 
             if not self.fill:
                 fill = Cell.EMPTY_COLOR_BG
                 outline = Cell.EMPTY_COLOR_BORDER
+                self.value = 0
 
             xmin = self.abs * self.size
             xmax = xmin + self.size
@@ -63,24 +66,24 @@ class CellGrid(Canvas):
         self.bind("<B1-Motion>", self.handleMouseMotion)
         #bind release button action - clear the memory of midified cells.
         self.bind("<ButtonRelease-1>", lambda event: self.switched.clear())
+        self.bind("<Double-Button-1>", self.save)
 
         self.draw()
-
 
     def draw(self):
         for row in self.grid:
             for cell in row:
                 cell.draw()
+                self.matrix[cell.ord, cell.abs] = cell.value
+
+        with open("map0.txt", "w") as file:
+            for line in self.matrix:
+                np.savetxt(file, line, fmt='%.0f')
+                file.write("\n")
 
     def _eventCoords(self, event):
         row = int(event.y / self.cellSize)
         column = int(event.x / self.cellSize)
-        with open("map3.txt", "w") as file:
-            for line in self.matrix:
-                np.savetxt(file, line, fmt='%.0f')
-                file.write("\n")
-                # file.write(str(line) + " ")
-                # file.write("\n")
         return row, column
 
     def handleMouseClick(self, event):
@@ -90,23 +93,26 @@ class CellGrid(Canvas):
         cell.draw()
         #add the cell to the list of cell switched during the click
         self.switched.append(cell)
-        self.matrix[row, column] = 1
+        #self.draw()
 
     def handleMouseMotion(self, event):
         row, column = self._eventCoords(event)
         cell = self.grid[row][column]
-        self.matrix[row, column] = 1
 
         if cell not in self.switched:
             cell._switch()
             cell.draw()
             self.switched.append(cell)
+        #self.draw()
 
+    def save(self, event):
+        print(event)
+        self.draw()
 
 if __name__ == "__main__" :
     app = Tk()
 
-    grid = CellGrid(app, 100, 100, 5)
+    grid = CellGrid(app, 50, 50, 10)
     grid.pack()
 
     app.mainloop()
