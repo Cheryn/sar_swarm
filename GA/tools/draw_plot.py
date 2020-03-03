@@ -14,8 +14,7 @@ def show_plot(best_chromosome):
 
     plt.figure(num=1)
     plt.clf()
-    plt.axis([Config.plt_ax_x_min, Config.plt_ax_x_max, Config.plt_ax_y_min,
-        Config.plt_ax_y_max])
+    plt.axis([Config.plt_ax_x_min, Config.plt_ax_x_max, Config.plt_ax_y_max, Config.plt_ax_y_min])
 
 #    _draw_path_points()
     _draw_obstacles()

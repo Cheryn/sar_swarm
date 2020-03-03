@@ -26,7 +26,7 @@ def create_population():
         [Population of chromosomes]
     """
 
-    np.set_printoptions(threshold=np.nan)
+    #np.set_printoptions(threshold=np.nan)
     link = Config.define_links()
     link_fit = _link_distance(link)
     link_prob = _link_prob(link_fit)

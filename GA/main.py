@@ -11,7 +11,7 @@ Email: yasim.ahmed63@yahoo.com
 """
 from tools.population import create_population, _both_equ
 from tools.fitness import fitness
-from tools.ranking import ranking
+#from tools.ranking import ranking
 from tools.dna import breed_by_crossover, _do_mutation
 from tools.draw_plot import show_plot
 from tools.selection import tournament_selection
@@ -22,7 +22,7 @@ import numpy as np
 
 def main():
     """
-    This function encapsulates the cappbilty of initializing chromosome population
+    This function encapsulates the capabilty of initializing chromosome population
     and then continue calculating fitness, generate ranking, perform crossover and
     mutation & repeating above steps until a defined stopping crietia is not met.
     """
@@ -101,7 +101,4 @@ def main():
     
     
 if __name__ == '__main__':
-
-    
-    
     main()

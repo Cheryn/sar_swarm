@@ -7,7 +7,6 @@ dim = 2
             
 
 def load_map():
-    
         """function that loads the map which was created from a .txt file
     
         Returns
@@ -18,7 +17,7 @@ def load_map():
         
         """
         
-        map_filename = "map1.txt"
+        map_filename = "map5.txt"
         txt_files = list(np.sort([file for file in os.listdir(os.getcwd()) if file.endswith(".txt")]))
         if len(txt_files) > 0:
             for txt_file in txt_files:
@@ -44,10 +43,10 @@ def load_map():
                 return map_matrix,map_plot,path_points
     
 
-path_points = load_map()[2]  # this is the list of coordinates that can be travelled through
+map_matrix, map_plot, path_points = load_map()  # this is the list of coordinates that can be travelled through
 npts = len(path_points)
 #Number of paths for the starting population which can be varied
-pop_max = 500
+pop_max = 50
 # Rate of mutation which can be varied
 mutation_rate = 0.01
 #index of the start point ie the first element in path points list
@@ -76,10 +75,10 @@ stop_generation = False
 img_iter_no = 1
 #range of axis for graph plot which depends on the size of our map 
 plt_tolerance = -1
-plt_ax_x_min = -1.0
-plt_ax_x_max = 20
+plt_ax_x_min = -1
+plt_ax_x_max = map_matrix.shape[0] + 1
 plt_ax_y_min = -1
-plt_ax_y_max = 20
+plt_ax_y_max = map_matrix.shape[0] + 1
 
 
 
