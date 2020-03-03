@@ -4,17 +4,15 @@ import os
 import numpy as np
 import copy
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from matplotlib.animation import FuncAnimation
-from celluloid import Camera
 
 dim = 2
 
 class Robot:
     def __init__(self):
         self.search_space = Space()
-        self.position = self.search_space.generate_item() #np.zeros(dim)
-        self.velocity = np.random.randint(0, 10, dim)
+        self.position = np.zeros(dim) #self.search_space.generate_item() #
+        self.initial_position = self.position
+        self.velocity = np.random.randint(0, 7, dim)
 
         # particle best
         self.pbest_position = copy.deepcopy(self.position)
@@ -25,63 +23,68 @@ class Robot:
     def move(self):
         step = np.round(self.velocity)
         destination = self.position + step
-        # print("position: ", self.position)
-        # print("destination: ", destination)
         while True:
             # zero velocity
             if (step == 0).all():
                 break
             else:
-                print("step: ", step)
+                # print("step: ", step)
                 next_position = self.position + np.round(step/max(abs(step)))
-            print(self.position)
-            print(next_position)
+            # hit wall
+            if (next_position >= self.search_space.gridsize * np.ones(dim)).any() or (
+                        next_position < np.zeros(dim)).any():
+                self.velocity = -step  # np.zeros(dim)
+                # print("hit wall")
+                break
+
+            # hit obstacle
+            elif self.search_space.map[int(next_position[1]), int(next_position[0])] == 1:
+                # print("hit obstacle")
+                self.velocity = np.random.randint(-7, 7, dim)
+                break
 
             # reached target
-            if (next_position == self.search_space.target).all():
+            elif (next_position == self.search_space.target).all():
                 self.position = next_position
-                print("reached target")
+                [self.path[i].append(self.position[i]) for i in range(len(self.path))]
+                # print("reached target")
                 break
+
             # reached destination
             elif (next_position == destination).all():
                 self.position = next_position
-                print("reached point")
+                [self.path[i].append(self.position[i]) for i in range(len(self.path))]
+                # print("reached point")
                 break
-            # hit wall
-            elif (next_position >= self.search_space.gridsize * np.ones(dim)).any() or (next_position < np.zeros(dim)).any():
-                self.velocity = -step #np.zeros(dim)
-                print("hit wall")
-                # print("hit wall")
-                break
-            # hit obstacle
-            elif self.search_space.map[int(next_position[1]), int(next_position[0])] == 1:
-                print("hit obstacle")
-                # print(next_position)
-                break
+
             # step into new position
             else:
                 self.position = next_position
                 step = destination - self.position
-                print("continue")
-        [self.path[i].append(self.position[i]) for i in range(len(self.path))]
+                [self.path[i].append(self.position[i]) for i in range(len(self.path))]
+                # print("continue")
 
-# todo: obstacle map search space
 class Space:
     def __init__(self):
         # load map
         self.map, self.map_plot = self._load_map()
         self.gridsize = self.map.shape[0]
 
-        self.target = np.array([5, 17])#self.generate_item()
+        self.target = (self.gridsize - 1) * np.ones(dim) #self.generate_item()
         self.robots = []
-        # self.fig = plt.figure()
-        # self.ax = plt.axes(xlim=(0, gridsize), ylim=(0, gridsize))
-        # self.camera = Camera(self.fig)
-        # self.line, = ax.plot([], [], lw=3)
 
         # global best
         self.gbest_position = np.random.uniform(0, self.gridsize, dim)
         self.gbest_value = float('inf')
+
+        # saving figures
+        self.pso_folder = "PSO_plots"
+        if not os.path.exists(self.pso_folder):
+            os.makedirs(self.pso_folder)
+        self.pso_set_dir = os.path.join(self.pso_folder, "set_0")
+        if not os.path.exists(self.pso_set_dir):
+            os.makedirs(self.pso_set_dir)
+        self.fignum = 0
 
     def _load_map(self):
         map_filename = None
@@ -107,11 +110,10 @@ class Space:
     def generate_item(self):
         while True:
             item = np.random.randint(self.map.shape[0], size=dim)
-            if self.map[item[1],item[0]] == 0:
+            if self.map[item[1], item[0]] == 0:
                 break
         return item
 
-    # todo: generate fitness based on distance
     def fitness(self, robot):
         return np.sum((self.target - robot.position)**2)**0.5
 
@@ -138,19 +140,21 @@ class Space:
             robot.move()
 
     def visualise(self):
-        plt.ion()
-        # x = [self.target[0]]
-        # y = [self.target[1]]
-        plt.scatter(self.map_plot[:,0],self.map_plot[:,1], marker='s')
-        plt.scatter(self.target[0], self.target[1], marker='o')
+        #plt.ion()
+        plt.figure(figsize=(5, 5))
+        plt.scatter(self.map_plot[:,0], self.map_plot[:,1], marker='s', color="#000000")
+        plt.scatter(self.target[0], self.target[1], marker='x', color="C1")
+        color_idx = 0
         for robot in self.robots:
-            # x.append(robot.position[0])
-            # y.append(robot.position[1])
-            plt.plot(robot.path[0], robot.path[1], marker="x")
-        # plt.scatter(x, y)
-        plt.xlim(0, self.gridsize-1)
-        plt.ylim(self.gridsize-1, 0)
-        plt.grid(True)
+            #plt.plot(robot.initial_position[0], robot.initial_position[1], marker="o")
+            plt.plot(robot.position[0], robot.position[1], marker="v", color="C"+str(color_idx))
+            plt.plot(robot.path[0], robot.path[1], color="C"+str(color_idx))
+            color_idx += 1
+        plt.xlim(-0.5, self.gridsize-0.5)
+        plt.ylim(self.gridsize-0.5, -0.5)
+        figname = "iter_" + str(self.fignum) + ".png"
+        plt.savefig(os.path.join(self.pso_set_dir, figname))
+        self.fignum += 1
         plt.show()
 
 def main():
@@ -160,16 +164,13 @@ def main():
     # n_robots = int(input("Inform the number of robots: "))
 
     n_iterations = 100
-    target_error = 1.0
-    n_robots = 15
+    target_error = 3.0
+    n_robots = 5
 
     search_space = Space()
     robots_vector = [Robot() for _ in range(n_robots)]
     search_space.robots = robots_vector
     print("target location: ", search_space.target)
-
-    # fig = plt.figure()
-    # camera = Camera(fig)
 
     iteration = 0
     while iteration < n_iterations:
@@ -179,31 +180,14 @@ def main():
         print("Iter: ", iteration, "Best pos: ", search_space.gbest_position, "Best val: ", search_space.gbest_value)
 
         search_space.visualise()
-        # search_space.camera.snap()
-        # anim = search_space.camera.animate()
-        # x = [target[0]]
-        # y = [target[1]]
-        # fig = plt.plot(search_space.target[0], search_space.target[1], marker='o')
-        # for robot in search_space.robots:
-        #     # x.append(robot.position[0])
-        #     # y.append(robot.position[1])
-        #     fig = plt.plot(robot.position[0], robot.position[1], marker="x")
-
-        # plt.xlim(0, gridsize)
-        # plt.ylim(gridsize, 0)
-        # plt.grid(True)
-        # plt.show()
-        # camera.snap()
 
         if search_space.gbest_value < target_error:
             break
 
-        search_space.move_robots(w=0.7298, c1=3, c2=2)
+        search_space.move_robots(w=0.7298, c1=2.05, c2=2.05)
         iteration += 1
 
     print("best solution is: ", search_space.gbest_position, "in n_iterations: ", iteration)
-    # anim = camera.animate()
-    # anim.save('test.mp4')
 
 if __name__ == '__main__':
     main()
