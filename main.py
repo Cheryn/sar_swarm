@@ -8,9 +8,9 @@ import matplotlib.pyplot as plt
 dim = 2
 
 class Robot:
-    def __init__(self):
-        self.search_space = Space()
-        self.position = np.zeros(dim) #self.search_space.generate_item() #
+    def __init__(self, target_israndom, map_filename):
+        self.search_space = Space(target_israndom, map_filename)
+        self.position = np.zeros(dim)#np.array([0, np.random.randint(0, self.search_space.gridsize-1)])#np.zeros(dim) #self.search_space.generate_item() #
         self.initial_position = self.position
         self.velocity = np.random.randint(0, 7, dim)
 
@@ -65,12 +65,16 @@ class Robot:
                 # print("continue")
 
 class Space:
-    def __init__(self):
+    def __init__(self, target_israndom, map_filename):
         # load map
-        self.map, self.map_plot = self._load_map()
+        self.map, self.map_plot = self._load_map(map_filename)
         self.gridsize = self.map.shape[0]
 
-        self.target = (self.gridsize - 1) * np.ones(dim) #self.generate_item()
+        if target_israndom:
+            self.target = self.generate_item()
+        else:
+            self.target = (self.gridsize - 1) * np.ones(dim)
+
         self.robots = []
 
         # global best
@@ -81,31 +85,22 @@ class Space:
         self.pso_folder = "PSO_plots"
         if not os.path.exists(self.pso_folder):
             os.makedirs(self.pso_folder)
-        self.pso_set_dir = os.path.join(self.pso_folder, "set_0")
+        self.pso_set_dir = os.path.join(self.pso_folder, "set_1")
         if not os.path.exists(self.pso_set_dir):
             os.makedirs(self.pso_set_dir)
         self.fignum = 0
 
-    def _load_map(self):
-        map_filename = None
-        txt_files = list(np.sort([file for file in os.listdir(os.getcwd()) if file.endswith(".txt")]))
-        if len(txt_files) > 0:
-            for txt_file in txt_files:
-                map_filename = os.path.join(os.getcwd(), txt_file)
-
-            if map_filename is None:
-                print("no map found")
-                return None
-            else:
-                with open(map_filename, "r") as file:
-                    map_data = file.readlines()
-                map_matrix = np.loadtxt(map_data)
-                map_plot = []
-                for y in range(len(map_matrix)):
-                    for x in range(len(map_matrix[y])):
-                        if map_matrix[y, x] == 1:
-                            map_plot.append([x, y])
-                return map_matrix, np.array(map_plot)
+    def _load_map(self, map_filename):
+        #map_filename = "map2.txt"
+        with open(map_filename, "r") as file:
+            map_data = file.readlines()
+        map_matrix = np.loadtxt(map_data)
+        map_plot = []
+        for y in range(len(map_matrix)):
+            for x in range(len(map_matrix[y])):
+                if map_matrix[y, x] == 1:
+                    map_plot.append([x, y])
+        return map_matrix, np.array(map_plot)
 
     def generate_item(self):
         while True:
@@ -163,17 +158,17 @@ def main():
     # target_error = float(input("Inform the target error: "))
     # n_robots = int(input("Inform the number of robots: "))
 
-    n_iterations = 100
+    max_iterations = 200
     target_error = 3.0
-    n_robots = 5
+    n_robots = 7
 
-    search_space = Space()
-    robots_vector = [Robot() for _ in range(n_robots)]
+    search_space = Space(target_israndom=False, map_filename="map1.txt")
+    robots_vector = [Robot(target_israndom=False, map_filename="map1.txt") for _ in range(n_robots)]
     search_space.robots = robots_vector
     print("target location: ", search_space.target)
 
     iteration = 0
-    while iteration < n_iterations:
+    while iteration < max_iterations:
         search_space.set_pbest()
         search_space.set_gbest()
 
@@ -184,7 +179,7 @@ def main():
         if search_space.gbest_value < target_error:
             break
 
-        search_space.move_robots(w=0.7298, c1=2.05, c2=2.05)
+        search_space.move_robots(w=0.7298, c1=3, c2=1.3)
         iteration += 1
 
     print("best solution is: ", search_space.gbest_position, "in n_iterations: ", iteration)
