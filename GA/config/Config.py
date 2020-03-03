@@ -46,9 +46,9 @@ def load_map():
 map_matrix, map_plot, path_points = load_map()  # this is the list of coordinates that can be travelled through
 npts = len(path_points)
 #Number of paths for the starting population which can be varied
-pop_max = 50
+pop_max = 150
 # Rate of mutation which can be varied
-mutation_rate = 0.01
+mutation_rate = 0.2
 #index of the start point ie the first element in path points list
 start_index = int(0)
 #index of the end point ie the last element of the path points list
@@ -58,7 +58,7 @@ generations = 1
 #in main()
 prev_best_fitness = 0
 #no of points between the start and goal points
-nobs = 149
+nobs = 300
 #not sure just left as is. I think it is to make sure the number stays as an integer 
 #because when it's not an integer all hell breaks lose
 nbits = ma.log10(npts) / ma.log10(2)
@@ -66,7 +66,7 @@ nbits = ma.log10(npts) / ma.log10(2)
 chr_len = int(((nobs+2)*nbits)/nbits)
 
 #specify tournament size
-tournament_size = 25
+tournament_size = int(0.1*pop_max)
 
 #in main()
 stop_criteria = 0
