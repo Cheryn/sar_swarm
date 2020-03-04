@@ -388,13 +388,21 @@ def ga(population_size=100, elite_frac=0.05, tournament_size=5, mutation_rate=0.
     return generation, path_finder.best_fitness_history
 
 def main():
+    # run once and visualise
     run_pso = False
+    run_ga = False
+
+    # change parameter values and plot graphs
+    run_pso_param = False
+    run_ga_param = True
+
+    # PSO param search
+    n_robots_range = range(5, 10, 1)
+    pso_num_runs = 25
 
     # GA param search
-    run_ga = True
     ga_popsize_range = range(10, 30, 10)
-    ga_num_runs = 3
-
+    ga_num_runs = 25
 
     if run_pso:
         iteration, gbest_history = pso(n_robots=10,
@@ -403,6 +411,63 @@ def main():
                                        visualise=False)
 
     if run_ga:
+        generation, best_fitness_history = ga(population_size=100,
+                                              elite_frac=0.05,
+                                              tournament_size=5,
+                                              mutation_rate=0.1,
+                                              max_generations=20,
+                                              max_consecutive_generations=8,
+                                              visualise=True)
+
+    if run_pso_param:
+        n_robots_ls = []
+        iter_ls = []
+        iter_std_ls = []
+        best_ls = []
+        best_std_ls = []
+
+        for n_robots in n_robots_range:
+            param_iter_ls = []
+            param_best_ls = []
+            for i in range(pso_num_runs):
+                print("n_robots: ", n_robots, "run: ", i)
+                random.seed(i)
+                iteration, gbest_history = pso(n_robots=n_robots,
+                                               target_error=3.0,
+                                               max_iterations=200,
+                                               visualise=False)
+                param_iter_ls.append(iteration)
+                param_best_ls.append(gbest_history[-1])
+            # save average and std to list
+            n_robots_ls.append(n_robots)
+            iter_ls.append(np.mean(param_iter_ls))
+            iter_std_ls.append(np.std(param_iter_ls))
+            best_ls.append(np.mean(param_best_ls))
+            best_std_ls.append(np.std(param_best_ls))
+
+        print(iter_std_ls, best_std_ls)
+        # plot graphs
+        plt.figure(0)
+        ave = plt.plot(n_robots_ls, iter_ls, label="mean")
+        std = plt.fill_between(n_robots_ls, np.array(iter_ls) - np.array(iter_std_ls),
+                         np.array(iter_ls) + np.array(iter_std_ls), alpha = 0.3, label="std")
+        plt.xlabel("No. of Robots")
+        plt.ylabel("No. of Iterations")
+        plt.title('No. of Iterations vs No. of robots')
+        plt.legend()
+        # plt.figure(1)
+        # plt.plot(n_robots_ls, best_ls)
+        # plt.fill_between(n_robots_ls, np.array(best_ls) - np.array(best_std_ls),
+        #                  np.array(best_ls) + np.array(best_std_ls))
+        # plt.xlabel("No. of Robots")
+        # plt.ylabel("Error of Final ")
+        # plt.title('No. of Iterations vs No. of robots')
+
+        plt.draw()
+        plt.show()
+
+
+    if run_ga_param:
         pop_size_ls = []
         n_gen_ls = []
         n_gen_std_ls = []
@@ -432,16 +497,25 @@ def main():
             best_dist_std_ls.append(np.std(param_dist_ls))
 
         print(n_gen_std_ls, best_dist_std_ls)
-         # plot graphs
+
+        # todo: consider plotting "no. of iterations = gen * pop size"?
+
+        # plot graphs
         plt.figure(0)
-        plt.plot(pop_size_ls, n_gen_std_ls)
-        plt.fill_between(pop_size, np.array(n_gen_ls) - np.array(n_gen_std_ls),
-                         np.array(n_gen_ls) + np.array(n_gen_std_ls), alpha = 0.3)
+        plt.plot(pop_size_ls, n_gen_std_ls, label="mean")
+        plt.fill_between(pop_size_ls, np.array(n_gen_ls) - np.array(n_gen_std_ls),
+                         np.array(n_gen_ls) + np.array(n_gen_std_ls), alpha=0.3, label="std")
+        plt.xlabel("Population Size")
+        plt.ylabel("No. of Generations")
+        plt.title('No. of Generations vs Population size')
 
         plt.figure(1)
-        plt.plot(pop_size_ls, best_dist_ls)
-        plt.fill_between(pop_size, np.array(best_dist_ls) - np.array(best_dist_std_ls),
-                         np.array(best_dist_ls) + np.array(best_dist_std_ls), alpha = 0.3)
+        plt.plot(pop_size_ls, best_dist_ls, label="mean")
+        plt.fill_between(pop_size_ls, np.array(best_dist_ls) - np.array(best_dist_std_ls),
+                         np.array(best_dist_ls) + np.array(best_dist_std_ls), alpha=0.3, label="std")
+        plt.xlabel("Population Size")
+        plt.ylabel("Length of Best Path")
+        plt.title('No. of Generations vs Population size')
 
         plt.draw()
         plt.show()
