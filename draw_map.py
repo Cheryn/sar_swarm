@@ -76,7 +76,7 @@ class CellGrid(Canvas):
                 cell.draw()
                 self.matrix[cell.ord, cell.abs] = cell.value
 
-        with open("map3.txt", "w") as file:
+        with open("map_small.txt", "w") as file:
             for line in self.matrix:
                 np.savetxt(file, line, fmt='%.0f')
                 file.write("\n")
@@ -112,7 +112,7 @@ class CellGrid(Canvas):
 if __name__ == "__main__" :
     app = Tk()
 
-    grid = CellGrid(app, 50, 50, 10)
+    grid = CellGrid(app, 10, 10, 40)
     grid.pack()
 
     app.mainloop()
